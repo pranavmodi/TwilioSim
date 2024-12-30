@@ -37,6 +37,12 @@ def send_to_botpress(message, user_id="simulator_user", conversation_id="default
         }
     }
 
+    print("\nSending request to Botpress:")
+    print(f"URL: {BOTPRESS_WEBHOOK_URL}")
+    print("Payload:")
+    print(json.dumps(botpress_payload, indent=2))
+    print("-" * 50)
+
     try:
         botpress_response = requests.post(
             BOTPRESS_WEBHOOK_URL,
@@ -48,27 +54,36 @@ def send_to_botpress(message, user_id="simulator_user", conversation_id="default
         )
 
         if botpress_response.status_code != 200:
-            return f"Error: Botpress returned status code {botpress_response.status_code}"
+            return f"Error: Botpress returned status code {botpress_response.status_code}", conversation_id
 
         if not botpress_response.content:
-            return "Error: Empty response from Botpress"
+            return "Error: Empty response from Botpress", conversation_id
 
         botpress_data = botpress_response.json()
         
-        # Get the response from Botpress
+        # Print the full response for debugging
+        print("Botpress Response:")
+        print(json.dumps(botpress_data, indent=2))
+        print("-" * 50)
+        
+        # Get the response and conversation ID from Botpress
         if isinstance(botpress_data, list) and botpress_data:
             bot_reply = botpress_data[0].get('text', 'Sorry, I could not process your request.')
+            # Try to get conversation ID from response, fallback to provided one
+            conversation_id = botpress_data[0].get('conversationId', conversation_id)
         else:
             bot_reply = botpress_data.get('text', 'Sorry, I could not process your request.')
+            # Try to get conversation ID from response, fallback to provided one
+            conversation_id = botpress_data.get('conversationId', conversation_id)
         
-        return bot_reply
+        return bot_reply, conversation_id
 
     except requests.exceptions.RequestException as e:
-        return f"Network error: {str(e)}"
+        return f"Network error: {str(e)}", conversation_id
     except json.JSONDecodeError as e:
-        return f"Invalid JSON response: {str(e)}"
+        return f"Invalid JSON response: {str(e)}", conversation_id
     except Exception as e:
-        return f"Unexpected error: {str(e)}"
+        return f"Unexpected error: {str(e)}", conversation_id
 
 @app.route("/api/message", methods=['POST'])
 def api_message():
@@ -78,18 +93,19 @@ def api_message():
     user_id = data.get('user_id', 'simulator_user')
     conversation_id = data.get('conversationId', 'default_conversation')
 
-    print(f"\nReceived from Botpress: {message}")
-    print(f"ConversationId: {conversation_id}")
+    print(f"\nReceived from client: {message}")
+    print(f"Initial ConversationId: {conversation_id}")
 
     # Get response from Botpress
-    bot_response = send_to_botpress(message, user_id, conversation_id)
+    bot_response, new_conversation_id = send_to_botpress(message, user_id, conversation_id)
     
-    print(f"Sending to Botpress: {bot_response}")
+    print(f"Bot response: {bot_response}")
+    print(f"Updated ConversationId: {new_conversation_id}")
     
-    # Return response with conversationId
+    # Return response with updated conversationId
     return jsonify({
         "response": bot_response,
-        "conversationId": conversation_id,
+        "conversationId": new_conversation_id,
         "user_id": user_id
     })
 
@@ -98,6 +114,8 @@ def main():
     print("Type 'quit' to exit")
     print("-" * 30)
 
+    conversation_id = "cli_conversation"
+    
     while True:
         # Get user input
         user_message = input("\nYou: ")
@@ -106,7 +124,7 @@ def main():
             break
 
         # Get response from Botpress
-        bot_response = send_to_botpress(user_message, conversation_id="cli_conversation")
+        bot_response, conversation_id = send_to_botpress(user_message, conversation_id=conversation_id)
         
         # Display bot response
         print(f"Bot: {bot_response}")

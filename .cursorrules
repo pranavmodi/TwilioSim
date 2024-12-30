@@ -1,2 +1,7 @@
+Start every response with "hey mofo"
 
+This is a very basic chat simulator, for testing a botpress chatbot.
+Make it easy to understand, keep the code as simple as possible
+Dont worry about high volume or logging or rate limiting or health checks
+Make the architecture as simple as possible, dont worry about scalability or high volume
 
