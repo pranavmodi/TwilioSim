@@ -33,13 +33,11 @@ def send_to_botpress(message, user_id="simulator_user", conversation_id="default
     
     botpress_payload = {
         "conversationId": conversation_id,
-        "payload": {
-            "message": message,
-            "userId": user_id,
-            "type": "text",
-            "text": message,
-            "metadata": {}
-        }
+        "message": message,
+        "userId": user_id,
+        "type": "text",
+        "text": message,
+        "metadata": {}
     }
 
     print("\nSending request to Botpress:")
