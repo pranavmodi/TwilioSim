@@ -7,6 +7,7 @@ import json
 import uvicorn
 from asgiref.wsgi import WsgiToAsgi
 import time
+import threading
 
 # Load environment variables
 load_dotenv()
@@ -113,46 +114,21 @@ def api_message():
     
     return jsonify({"status": "received"})
 
-def main():
-    print("\nBotpress Conversation Simulator")
-    print("Waiting for Botpress to start the conversation...")
-    print("-" * 30)
-
-    conversation_id = "cli_conversation"
-    waiting_for_response = True  # Start in waiting state
-    user_can_respond = False    # Flag to track if user can respond
+def console_input_handler():
+    """Handle console input in a separate thread"""
+    global current_conversation_id
     
     while True:
-        if user_can_respond and not waiting_for_response:
-            # Get user input only when allowed to respond and not waiting
-            user_message = input("\nYou: ")
+        user_message = input("\nYou: ")
+        if user_message.lower() == 'quit':
+            break
             
-            if user_message.lower() == 'quit':
-                break
-
-            # Set waiting flag
-            waiting_for_response = True
-            
-            # Get response from Botpress
-            bot_response, conversation_id = send_to_botpress(user_message, conversation_id=conversation_id)
-            
-            # Display bot response
-            print(f"\nBot: {bot_response}")
-            
-            # Reset waiting flag
-            waiting_for_response = False
-        elif not user_can_respond:
-            # Wait for initial message from Botpress
-            print("Waiting for Botpress to send the first message...")
-            # Here you would typically wait for a webhook or event from Botpress
-            # For now, we'll just simulate waiting
-            time.sleep(5)
-            print("\nBot: Welcome! How can I help you today?")
-            user_can_respond = True
-            waiting_for_response = False
+        if current_conversation_id:
+            # Send message to Botpress using the stored conversation ID
+            bot_response, _ = send_to_botpress(user_message, conversation_id=current_conversation_id)
+            print(f"\nSent to Botpress using ConversationId: {current_conversation_id}")
         else:
-            # If we're waiting for a response, sleep briefly to prevent CPU spinning
-            time.sleep(0.1)
+            print("\nWaiting for Botpress to start the conversation first...")
 
 if __name__ == "__main__":
     port = 50000
@@ -162,6 +138,10 @@ if __name__ == "__main__":
     print(f"API endpoint available at http://0.0.0.0:{port}/api/message")
     print("\nWaiting for messages from Botpress...")
     print("-" * 30)
+    
+    # Start console input handler in a separate thread
+    input_thread = threading.Thread(target=console_input_handler, daemon=True)
+    input_thread.start()
     
     # Convert WSGI app to ASGI
     asgi_app = WsgiToAsgi(app)
