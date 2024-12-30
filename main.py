@@ -119,9 +119,12 @@ def console_input_handler():
     global current_conversation_id
     
     while True:
-        user_message = input("\nYou: ")
+        user_message = input("\nYou: ").strip()  # Strip whitespace
         if user_message.lower() == 'quit':
             break
+            
+        if not user_message:  # Skip empty messages
+            continue
             
         if current_conversation_id:
             # Send message to Botpress using the stored conversation ID
