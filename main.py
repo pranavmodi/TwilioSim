@@ -5,6 +5,7 @@ import os
 from dotenv import load_dotenv
 import json
 import uvicorn
+from asgiref.wsgi import WsgiToAsgi
 
 # Load environment variables
 load_dotenv()
@@ -117,5 +118,8 @@ if __name__ == "__main__":
     print("\nTo access this from the internet, use your server's public IP address or domain name")
     print("-" * 30)
     
-    # Run Uvicorn server
-    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
+    # Convert WSGI app to ASGI
+    asgi_app = WsgiToAsgi(app)
+    
+    # Run Uvicorn server with ASGI app
+    uvicorn.run(asgi_app, host="0.0.0.0", port=port, log_level="info")
