@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import json
 import uvicorn
 from asgiref.wsgi import WsgiToAsgi
+import time
 
 # Load environment variables
 load_dotenv()
@@ -26,6 +27,9 @@ CORS(app, resources={
 
 def send_to_botpress(message, user_id="simulator_user", conversation_id="default_conversation"):
     """Simulate sending a message to Botpress"""
+    print("\nSending message to Botpress...")
+    print("Waiting for response...")
+    
     botpress_payload = {
         "message": message,
         "conversationId": conversation_id,
@@ -52,6 +56,12 @@ def send_to_botpress(message, user_id="simulator_user", conversation_id="default
                 'Accept': 'application/json'
             }
         )
+
+        print("\nBotpress Response Details:")
+        print(f"Status Code: {botpress_response.status_code}")
+        print(f"Response Headers: {dict(botpress_response.headers)}")
+        print(f"Raw Response Content: {botpress_response.content}")
+        print("-" * 50)
 
         if botpress_response.status_code != 200:
             return f"Error: Botpress returned status code {botpress_response.status_code}", conversation_id
@@ -111,23 +121,44 @@ def api_message():
 
 def main():
     print("\nBotpress Conversation Simulator")
-    print("Type 'quit' to exit")
+    print("Waiting for Botpress to start the conversation...")
     print("-" * 30)
 
     conversation_id = "cli_conversation"
+    waiting_for_response = True  # Start in waiting state
+    user_can_respond = False    # Flag to track if user can respond
     
     while True:
-        # Get user input
-        user_message = input("\nYou: ")
-        
-        if user_message.lower() == 'quit':
-            break
+        if user_can_respond and not waiting_for_response:
+            # Get user input only when allowed to respond and not waiting
+            user_message = input("\nYou: ")
+            
+            if user_message.lower() == 'quit':
+                break
 
-        # Get response from Botpress
-        bot_response, conversation_id = send_to_botpress(user_message, conversation_id=conversation_id)
-        
-        # Display bot response
-        print(f"Bot: {bot_response}")
+            # Set waiting flag
+            waiting_for_response = True
+            
+            # Get response from Botpress
+            bot_response, conversation_id = send_to_botpress(user_message, conversation_id=conversation_id)
+            
+            # Display bot response
+            print(f"\nBot: {bot_response}")
+            
+            # Reset waiting flag
+            waiting_for_response = False
+        elif not user_can_respond:
+            # Wait for initial message from Botpress
+            print("Waiting for Botpress to send the first message...")
+            # Here you would typically wait for a webhook or event from Botpress
+            # For now, we'll just simulate waiting
+            time.sleep(5)
+            print("\nBot: Welcome! How can I help you today?")
+            user_can_respond = True
+            waiting_for_response = False
+        else:
+            # If we're waiting for a response, sleep briefly to prevent CPU spinning
+            time.sleep(0.1)
 
 if __name__ == "__main__":
     port = 50000
