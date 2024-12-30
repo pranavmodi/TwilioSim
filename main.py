@@ -32,11 +32,11 @@ def send_to_botpress(message, user_id="simulator_user", conversation_id="default
     
     botpress_payload = {
         "message": message,
-        "conversationId": conversation_id,
         "userId": user_id,
         "payload": {
             "type": "text",
             "text": message,
+            "conversationId": conversation_id,
             "metadata": {}
         }
     }
