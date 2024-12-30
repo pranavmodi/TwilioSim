@@ -4,6 +4,9 @@ import requests
 import os
 from dotenv import load_dotenv
 import json
+from pyngrok import ngrok
+import uvicorn
+from threading import Thread
 
 # Load environment variables
 load_dotenv()
@@ -110,9 +113,17 @@ def main():
         print(f"Bot: {bot_response}")
 
 if __name__ == "__main__":
-    # Run the Flask app in a separate thread
-    from threading import Thread
-    server_thread = Thread(target=lambda: app.run(debug=True, use_reloader=False))
+    # Create ngrok tunnel
+    port = 50000
+    public_url = ngrok.connect(port).public_url
+    print(f"\nNgrok tunnel established at: {public_url}")
+    print(f"Use this URL to send requests to your API: {public_url}/api/message")
+    print("\nBotpress Conversation Simulator")
+    print("Type 'quit' to exit")
+    print("-" * 30)
+
+    # Run the Uvicorn server in a separate thread
+    server_thread = Thread(target=lambda: uvicorn.run(app, host="0.0.0.0", port=port, log_level="info"))
     server_thread.start()
 
     # Start the command-line interface
