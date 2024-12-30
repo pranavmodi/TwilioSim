@@ -32,10 +32,10 @@ def send_to_botpress(message, user_id="simulator_user", conversation_id="default
     print("Waiting for response...")
     
     botpress_payload = {
-        "message": message,
-        "userId": user_id,
         "conversationId": conversation_id,
         "payload": {
+            "message": message,
+            "userId": user_id,
             "type": "text",
             "text": message,
             "metadata": {}
