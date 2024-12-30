@@ -97,27 +97,21 @@ def send_to_botpress(message, user_id="simulator_user", conversation_id="default
 
 @app.route("/api/message", methods=['POST'])
 def api_message():
-    """API endpoint to receive messages and respond via Botpress"""
+    """API endpoint to receive messages from Botpress"""
     data = request.json
     message = data.get('message', '')
-    user_id = data.get('user_id', 'simulator_user')
     conversation_id = data.get('conversationId', 'default_conversation')
 
-    print(f"\nReceived from client: {message}")
-    print(f"Initial ConversationId: {conversation_id}")
+    print("\nReceived from Botpress:")
+    print(f"Message: {message}")
+    print(f"ConversationId: {conversation_id}")
+    print("-" * 30)
 
-    # Get response from Botpress
-    bot_response, new_conversation_id = send_to_botpress(message, user_id, conversation_id)
+    # Store conversation ID for later use
+    global current_conversation_id
+    current_conversation_id = conversation_id
     
-    print(f"Bot response: {bot_response}")
-    print(f"Updated ConversationId: {new_conversation_id}")
-    
-    # Return response with updated conversationId
-    return jsonify({
-        "response": bot_response,
-        "conversationId": new_conversation_id,
-        "user_id": user_id
-    })
+    return jsonify({"status": "received"})
 
 def main():
     print("\nBotpress Conversation Simulator")
@@ -162,9 +156,11 @@ def main():
 
 if __name__ == "__main__":
     port = 50000
+    current_conversation_id = None  # Global variable to store conversation ID
+    
     print(f"\nStarting server on http://0.0.0.0:{port}")
     print(f"API endpoint available at http://0.0.0.0:{port}/api/message")
-    print("\nTo access this from the internet, use your server's public IP address or domain name")
+    print("\nWaiting for messages from Botpress...")
     print("-" * 30)
     
     # Convert WSGI app to ASGI
